@@ -19,6 +19,8 @@ class BM25Index:
         self.chunks: List[DocumentChunk] = []
         self._bm25: Optional[BM25Okapi] = None
         self._tokenized_corpus: List[List[str]] = []
+        if self.storage_path and Path(self.storage_path).exists():
+            self.load()
 
     @staticmethod
     def tokenize(text: str) -> List[str]:

@@ -1,5 +1,13 @@
 """Document data models."""
 
+from veritas_crag.models.crag import (
+    CRAGAction,
+    CRAGContext,
+    DocumentGrade,
+    GradingResult,
+    RefinedKnowledge,
+    WebSearchResult,
+)
 from veritas_crag.models.document import (
     DocumentChunk,
     DocumentMetadata,
@@ -15,4 +23,10 @@ __all__ = [
     "ParsedDocument",
     "RetrievalResult",
     "HybridSearchResult",
+    "CRAGAction",
+    "DocumentGrade",
+    "GradingResult",
+    "WebSearchResult",
+    "RefinedKnowledge",
+    "CRAGContext",
 ]

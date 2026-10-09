@@ -76,6 +76,14 @@ class Settings(BaseSettings):
     RRF_K: int = 60
     RERANKER_TOP_K: int = 5
 
+    # Phase 3: Corrective RAG (CRAG) Configuration
+    CRAG_UPPER_THRESHOLD: float = 0.65  # Upper threshold (CORRECT if >= threshold)
+    CRAG_LOWER_THRESHOLD: float = 0.30  # Lower threshold (INCORRECT if < threshold; AMBIGUOUS if between)
+    MAX_WEB_RESULTS: int = 3
+    WEB_SEARCH_PROVIDER: str = "duckduckgo"  # "duckduckgo" or "tavily"
+    ENABLE_KNOWLEDGE_REFINEMENT: bool = True
+    MAX_REFINED_STRIPS_PER_DOC: int = 3
+
     # API Keys for LLMs & Web Fallbacks
     GEMINI_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
