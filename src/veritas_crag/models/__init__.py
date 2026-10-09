@@ -6,10 +6,13 @@ from veritas_crag.models.document import (
     DocumentTable,
     ParsedDocument,
 )
+from veritas_crag.models.retrieval import HybridSearchResult, RetrievalResult
 
 __all__ = [
     "DocumentMetadata",
     "DocumentTable",
     "DocumentChunk",
     "ParsedDocument",
+    "RetrievalResult",
+    "HybridSearchResult",
 ]

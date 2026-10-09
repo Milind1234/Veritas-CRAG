@@ -55,9 +55,28 @@ class Settings(BaseSettings):
     CHUNK_MERGE_PEERS: bool = True
     REPEAT_TABLE_HEADER: bool = True
 
-    # Future Phases: Vector Store & API keys (Optional for Phase 1)
-    QDRANT_URL: Optional[str] = "http://localhost:6333"
+    # Phase 2: Retrieval & Vector Store Configuration
+    EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
+    EMBEDDING_BATCH_SIZE: int = 32
+    RERANKER_MODEL_NAME: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    
+    QDRANT_STORAGE_PATH: Optional[Path] = Field(
+        default_factory=lambda: Path(__file__).resolve().parent.parent.parent.parent / "data" / "qdrant_db"
+    )
+    QDRANT_COLLECTION_NAME: str = "veritas_chunks"
+    QDRANT_URL: Optional[str] = None  # Set if using external Qdrant server
     QDRANT_API_KEY: Optional[str] = None
+    
+    BM25_STORAGE_PATH: Optional[Path] = Field(
+        default_factory=lambda: Path(__file__).resolve().parent.parent.parent.parent / "data" / "bm25_index.pkl"
+    )
+
+    DENSE_TOP_K: int = 10
+    SPARSE_TOP_K: int = 10
+    RRF_K: int = 60
+    RERANKER_TOP_K: int = 5
+
+    # API Keys for LLMs & Web Fallbacks
     GEMINI_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[str] = None
