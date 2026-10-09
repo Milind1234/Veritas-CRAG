@@ -57,7 +57,7 @@ class CRAGContext(BaseModel):
     transformed_query: Optional[str] = None
     action: CRAGAction
     confidence: float
-    grading_result: GradingResult
+    grading_result: Optional[GradingResult] = None
     internal_knowledge: List[RefinedKnowledge] = Field(default_factory=list)
     web_knowledge: List[RefinedKnowledge] = Field(default_factory=list)
     final_context_text: str = Field(

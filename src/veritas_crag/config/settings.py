@@ -84,6 +84,14 @@ class Settings(BaseSettings):
     ENABLE_KNOWLEDGE_REFINEMENT: bool = True
     MAX_REFINED_STRIPS_PER_DOC: int = 3
 
+    # Phase 4: Synthesis, Grounding & API Configuration
+    LLM_PROVIDER: str = "auto"  # "auto", "gemini", "openai", "anthropic", "ollama", or "local"
+    LLM_MODEL_NAME: str = "gemini-1.5-flash"
+    TEMPERATURE: float = 0.1
+    GROUNDING_THRESHOLD: float = 0.70  # Minimum confidence for a claim to be considered grounded
+    API_HOST: str = "0.0.0.0"
+    API_PORT: int = 8000
+
     # API Keys for LLMs & Web Fallbacks
     GEMINI_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None

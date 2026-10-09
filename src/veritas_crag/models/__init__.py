@@ -14,6 +14,14 @@ from veritas_crag.models.document import (
     DocumentTable,
     ParsedDocument,
 )
+from veritas_crag.models.pipeline import (
+    Citation,
+    GeneratedResponse,
+    GroundingEvaluation,
+    IngestResponse,
+    QueryRequest,
+    QueryResponse,
+)
 from veritas_crag.models.retrieval import HybridSearchResult, RetrievalResult
 
 __all__ = [
@@ -29,4 +37,10 @@ __all__ = [
     "WebSearchResult",
     "RefinedKnowledge",
     "CRAGContext",
+    "Citation",
+    "GroundingEvaluation",
+    "GeneratedResponse",
+    "QueryRequest",
+    "QueryResponse",
+    "IngestResponse",
 ]

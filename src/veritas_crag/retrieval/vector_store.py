@@ -12,6 +12,9 @@ from veritas_crag.models.document import DocumentChunk
 from veritas_crag.retrieval.embeddings import BaseEmbeddingModel, SentenceTransformerEmbeddings
 
 
+_QDRANT_CLIENT_CACHE: dict = {}
+
+
 class QdrantVectorStore:
     """Production-grade vector database interface using Qdrant."""
 
@@ -37,10 +40,14 @@ class QdrantVectorStore:
             logger.info(f"Connecting to remote Qdrant instance at: {target_url}")
             self.client = QdrantClient(url=target_url, api_key=target_key)
         else:
-            local_path = Path(storage_path or settings.QDRANT_STORAGE_PATH).resolve()
-            local_path.mkdir(parents=True, exist_ok=True)
-            logger.info(f"Initializing local persistent Qdrant at: {local_path}")
-            self.client = QdrantClient(path=str(local_path))
+            local_path = str(Path(storage_path or settings.QDRANT_STORAGE_PATH).resolve())
+            Path(local_path).mkdir(parents=True, exist_ok=True)
+            if local_path in _QDRANT_CLIENT_CACHE:
+                self.client = _QDRANT_CLIENT_CACHE[local_path]
+            else:
+                logger.info(f"Initializing local persistent Qdrant at: {local_path}")
+                self.client = QdrantClient(path=local_path)
+                _QDRANT_CLIENT_CACHE[local_path] = self.client
 
         self._ensure_collection_exists()
 
