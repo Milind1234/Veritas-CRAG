@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from veritas_crag.models.crag import CRAGAction
+from veritas_crag.models.document import DocumentChunk, DocumentTable
 
 
 class Citation(BaseModel):
@@ -78,3 +79,7 @@ class IngestResponse(BaseModel):
     total_tables: int
     total_chunks: int
     parsing_duration_seconds: float
+    markdown: Optional[str] = Field(default="", description="Full extracted document Markdown")
+    tables: Optional[List[DocumentTable]] = Field(default_factory=list, description="Extracted tables")
+    chunks: Optional[List[DocumentChunk]] = Field(default_factory=list, description="Generated hybrid chunks")
+

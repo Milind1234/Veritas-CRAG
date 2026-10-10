@@ -55,6 +55,10 @@ data/output/*
 !data/output/.gitkeep
 data/sample_docs/*
 !data/sample_docs/.gitkeep
+data/qdrant_db/
+data/bm25_index.pkl
+*.pdf
+!data/sample_docs/sample_report.pdf
 
 # Model cache & checkpoints
 models_cache/

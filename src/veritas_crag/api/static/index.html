@@ -1,0 +1,1922 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VeritasCRAG — Document Intelligence & Corrective RAG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <!-- Lightweight Markdown parser for rendering extracted doc -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #06b6d4;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.12) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 1.1rem 2rem;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(12px);
+      background: rgba(9, 13, 22, 0.8);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #fff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #a5b4fc;
+      font-weight: 600;
+    }
+
+    .header-links {
+      display: flex;
+      gap: 1.25rem;
+      align-items: center;
+    }
+
+    .header-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    .header-links a:hover {
+      color: #fff;
+    }
+
+    main {
+      flex: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 1.75rem;
+    }
+
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      color: #e2e8f0;
+    }
+
+    /* Ingestion Upload Panel */
+    .upload-zone {
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 1.75rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .upload-zone:hover {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .upload-zone input {
+      display: none;
+    }
+
+    .upload-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .upload-text {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .upload-btn {
+      margin-top: 0.9rem;
+      width: 100%;
+      padding: 0.75rem;
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+
+    .upload-btn:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .upload-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .file-pill {
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      padding: 0.45rem 0.65rem;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 6px;
+      display: none;
+      word-break: break-all;
+      color: #c7d2fe;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+
+    .stat-box {
+      background: rgba(0, 0, 0, 0.25);
+      padding: 0.75rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .stat-label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-val {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-top: 0.2rem;
+    }
+
+    .quick-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+    }
+
+    .quick-btn {
+      padding: 0.6rem 0.85rem;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      color: #cbd5e1;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+
+    .quick-btn:hover {
+      background: rgba(99, 102, 241, 0.12);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    /* Right Main Panel with Tabs */
+    .workspace-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* Navigation Tabs */
+    .tabs-bar {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 0.35rem;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      padding: 0.65rem 1.1rem;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-family: var(--font);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+    }
+
+    .tab-badge {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 0.15rem 0.45rem;
+      border-radius: 10px;
+      font-size: 0.7rem;
+    }
+
+    /* Tab Panes */
+    .tab-pane {
+      display: none;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .tab-pane.active {
+      display: flex;
+    }
+
+    /* Chat / Query Panel */
+    .query-box-wrapper {
+      position: relative;
+    }
+
+    .query-input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.1rem 5.5rem 1.1rem 1.25rem;
+      color: #fff;
+      font-size: 0.95rem;
+      font-family: var(--font);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .query-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .send-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 0.65rem 1.25rem;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .send-btn:hover {
+      opacity: 0.9;
+    }
+
+    /* Sample Questions */
+    .sample-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .sample-pill {
+      font-size: 0.78rem;
+      padding: 0.4rem 0.8rem;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .sample-pill:hover {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    /* Result Section */
+    .result-card {
+      display: none;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .verdict-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 1.25rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .verdict-correct {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+
+    .verdict-ambiguous {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fbbf24;
+    }
+
+    .verdict-incorrect {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+    }
+
+    .answer-text {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: #f1f5f9;
+      white-space: pre-wrap;
+    }
+
+    .citations-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-top: 0.5rem;
+    }
+
+    .citation-item {
+      padding: 0.75rem 1rem;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      font-size: 0.8rem;
+    }
+
+    .citation-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+    }
+
+    .citation-snippet {
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Document Reader View (Markdown Viewer) */
+    .doc-viewer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .doc-viewer-actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-shrink: 0;
+    }
+
+    .action-chip {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .action-chip:hover {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: var(--primary);
+    }
+
+    .action-chip.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    /* Document Summary Bar */
+    .doc-summary-bar {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .doc-summary-item {
+      padding: 0.6rem 1rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      flex: 1;
+      min-width: 100px;
+    }
+
+    .doc-summary-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .doc-summary-value {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #fff;
+      margin-top: 0.2rem;
+    }
+
+    /* Structured Markdown body */
+    .markdown-body {
+      color: #e2e8f0;
+      line-height: 1.75;
+      font-size: 0.92rem;
+      max-height: 780px;
+      overflow-y: auto;
+      padding-right: 0.75rem;
+    }
+
+    /* Document Section Cards: group content under headings into visual cards */
+    .doc-section {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-left: 3px solid var(--primary);
+      border-radius: 0 10px 10px 0;
+      padding: 1.1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .doc-section:nth-child(even) {
+      border-left-color: var(--accent);
+    }
+
+    .doc-section:nth-child(3n) {
+      border-left-color: var(--success);
+    }
+
+    .doc-section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.65rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .doc-section-content {
+      color: #cbd5e1;
+      font-size: 0.88rem;
+      line-height: 1.7;
+    }
+
+    .doc-section-content p {
+      margin-bottom: 0.6rem;
+    }
+
+    .doc-section-content ul,
+    .doc-section-content ol {
+      margin-left: 1.25rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .doc-section-content li {
+      margin-bottom: 0.3rem;
+      padding-left: 0.25rem;
+    }
+
+    .doc-section-content li::marker {
+      color: var(--accent);
+    }
+
+    /* Key-Value Pair Grid (for form-like documents: Name, Address, Date fields) */
+    .kv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.6rem;
+      margin-top: 0.5rem;
+    }
+
+    .kv-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 0.6rem 0.85rem;
+    }
+
+    .kv-label {
+      font-size: 0.68rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+
+    .kv-value {
+      font-size: 0.88rem;
+      color: #f1f5f9;
+      font-weight: 600;
+      margin-top: 0.15rem;
+      word-break: break-word;
+    }
+
+    /* Markdown body fallback (when raw markdown rendering is on) */
+    .markdown-body h1,
+    .markdown-body h2,
+    .markdown-body h3 {
+      color: #fff;
+      margin-top: 1.25rem;
+      margin-bottom: 0.6rem;
+      letter-spacing: -0.01em;
+    }
+
+    .markdown-body h1 {
+      font-size: 1.35rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 0.4rem;
+    }
+
+    .markdown-body h2 {
+      font-size: 1.12rem;
+      color: #a5b4fc;
+    }
+
+    .markdown-body h3 {
+      font-size: 0.95rem;
+      color: var(--accent);
+    }
+
+    .markdown-body p {
+      margin-bottom: 0.75rem;
+    }
+
+    .markdown-body ul,
+    .markdown-body ol {
+      margin-left: 1.5rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .markdown-body li {
+      margin-bottom: 0.3rem;
+    }
+
+    .markdown-body code {
+      font-family: var(--font-mono);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      color: #38bdf8;
+    }
+
+    .markdown-body pre {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .markdown-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+    }
+
+    .markdown-body table th,
+    .markdown-body table td {
+      padding: 0.6rem 0.85rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.85rem;
+    }
+
+    .markdown-body table th {
+      background: rgba(99, 102, 241, 0.12);
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+
+    /* ====== Tables Viewer (redesigned) ====== */
+    .tables-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      max-height: 780px;
+      overflow-y: auto;
+      padding-right: 0.5rem;
+    }
+
+    .table-wrapper {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      overflow: hidden;
+      flex-shrink: 0;
+      min-height: fit-content;
+    }
+
+    .table-header-meta {
+      padding: 0.85rem 1.15rem;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(6, 182, 212, 0.06));
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .table-header-meta .table-name {
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .table-header-meta .table-page {
+      color: var(--accent);
+      font-size: 0.75rem;
+      background: rgba(6, 182, 212, 0.15);
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .table-scroll-wrap {
+      overflow-x: auto;
+      position: relative;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
+    }
+
+    .table-scroll-wrap::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .table-scroll-wrap::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.3);
+      border-radius: 3px;
+    }
+
+    .table-scroll-hint {
+      padding: 0.45rem 1rem;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      text-align: left;
+      min-width: 600px;
+    }
+
+    .data-table thead {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .data-table th {
+      padding: 0.75rem 1rem;
+      background: rgba(99, 102, 241, 0.14);
+      color: #e2e8f0;
+      font-weight: 700;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      border-bottom: 2px solid rgba(99, 102, 241, 0.3);
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #e2e8f0;
+      font-size: 0.84rem;
+      vertical-align: top;
+    }
+
+    .data-table tbody tr:nth-child(even) td {
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    .data-table tbody tr:hover td {
+      background: rgba(99, 102, 241, 0.06);
+    }
+
+    .data-table td:first-child {
+      font-weight: 600;
+      color: #f8fafc;
+    }
+
+    /* ====== Chunks Inspector (redesigned) ====== */
+    .chunks-toolbar {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+
+    .chunks-search {
+      flex: 1;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.65rem 1rem;
+      color: #fff;
+      font-size: 0.85rem;
+      font-family: var(--font);
+      outline: none;
+    }
+
+    .chunks-search:focus {
+      border-color: var(--primary);
+    }
+
+    .chunks-count {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .chunks-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-height: 680px;
+      overflow-y: auto;
+      padding-right: 0.5rem;
+    }
+
+    .chunk-card {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-left: 3px solid var(--primary);
+      border-radius: 0 10px 10px 0;
+      padding: 1rem 1.1rem;
+      transition: all 0.2s;
+    }
+
+    .chunk-card:nth-child(even) {
+      border-left-color: var(--accent);
+    }
+
+    .chunk-card:hover {
+      border-color: rgba(99, 102, 241, 0.35);
+      background: rgba(99, 102, 241, 0.04);
+    }
+
+    .chunk-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.45rem;
+    }
+
+    .chunk-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.73rem;
+      color: var(--text-muted);
+    }
+
+    .chunk-tag {
+      padding: 0.18rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .chunk-tag-text {
+      background: rgba(99, 102, 241, 0.18);
+      color: #a5b4fc;
+    }
+
+    .chunk-tag-table {
+      background: rgba(6, 182, 212, 0.18);
+      color: #67e8f9;
+    }
+
+    .chunk-breadcrumb {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .chunk-content {
+      font-size: 0.84rem;
+      line-height: 1.65;
+      color: #b0bec5;
+      white-space: pre-wrap;
+      font-family: var(--font);
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 6px;
+      padding: 0.75rem 0.9rem;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .chunk-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.65rem;
+    }
+
+    .chunk-ask-btn {
+      padding: 0.38rem 0.7rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 6px;
+      color: #c7d2fe;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all 0.2s;
+    }
+
+    .chunk-ask-btn:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* Notification banner */
+    .ingest-banner {
+      display: none;
+      padding: 0.85rem 1.1rem;
+      border-radius: 10px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .spin {
+      width: 22px;
+      height: 22px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: rotating 0.8s linear infinite;
+    }
+
+    @keyframes rotating {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Empty state placeholder */
+    .empty-state {
+      padding: 3rem 1rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .empty-state-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🛡️</div>
+      <div>
+        <div class="brand-title">VeritasCRAG</div>
+      </div>
+      <span class="brand-badge" id="mpsBadge">Apple M4 MPS Active</span>
+    </div>
+    <div class="header-links">
+      <a href="/docs" target="_blank">Swagger API ↗</a>
+      <a href="https://github.com/DS4SD/docling" target="_blank">Docling ↗</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left Sidebar: Ingestion & Document Intelligence Status -->
+    <div class="sidebar">
+      <div class="card">
+        <div class="card-title">📄 Document Ingestion (Docling)</div>
+        <div class="upload-zone" id="dropZone" onclick="document.getElementById('pdfInput').click()">
+          <div class="upload-icon">📥</div>
+          <div style="font-weight:600; font-size:0.9rem;">Click or Drag PDF / Docx here</div>
+          <div class="upload-text">IBM Docling Layout + Table Analysis</div>
+          <input type="file" id="pdfInput" accept=".pdf,.docx,.pptx,.md,.html">
+        </div>
+        <div class="file-pill" id="filePill"></div>
+        <button class="upload-btn" id="uploadBtn" onclick="uploadDocument()" style="display:none;">Ingest & Extract
+          Document</button>
+
+        <div class="stats-grid" id="docStats">
+          <div class="stat-box" style="grid-column: span 2;">
+            <div class="stat-label">Active Document</div>
+            <div class="stat-val" id="activeDocName"
+              style="font-size:0.85rem; word-break:break-all; font-weight:600; color:#38bdf8;">
+              Loading...
+            </div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Pages</div>
+            <div class="stat-val" id="statPages">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Tables</div>
+            <div class="stat-val" id="statTables">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Chunks</div>
+            <div class="stat-val" id="statChunks">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Docling Speed</div>
+            <div class="stat-val" id="statTime">0.0s</div>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <button class="quick-btn" onclick="switchTab('markdown')">
+            <span>📄 View Extracted Text</span>
+            <span id="quickDocSize">→</span>
+          </button>
+          <button class="quick-btn" onclick="switchTab('tables')">
+            <span>📊 View Tables</span>
+            <span id="quickTableBadge" class="tab-badge" style="background:rgba(255,255,255,0.1);">0</span>
+          </button>
+          <button class="quick-btn" onclick="switchTab('chunks')">
+            <span>🧩 Inspect Chunks</span>
+            <span id="quickChunksBadge" class="tab-badge" style="background:rgba(255,255,255,0.1);">0</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Workspace: Tabs (Chat Studio / Extracted Document / Tables / Chunks) -->
+    <div class="workspace-container">
+
+      <!-- Ingest Notification Banner -->
+      <div class="ingest-banner" id="ingestBanner">
+        <span id="ingestBannerText">✅ Document parsed and indexed successfully!</span>
+        <button class="action-chip"
+          onclick="document.getElementById('ingestBanner').style.display='none'">Dismiss</button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="tabs-bar">
+        <button class="tab-btn active" id="tabBtnChat" onclick="switchTab('chat')">
+          💬 Ask & Verify (CRAG)
+        </button>
+        <button class="tab-btn" id="tabBtnMarkdown" onclick="switchTab('markdown')">
+          📄 Extracted Document
+          <span class="tab-badge" id="tabDocBadge">Ready</span>
+        </button>
+        <button class="tab-btn" id="tabBtnTables" onclick="switchTab('tables')">
+          📊 Extracted Tables
+          <span class="tab-badge" id="tabTablesBadge">0</span>
+        </button>
+        <button class="tab-btn" id="tabBtnChunks" onclick="switchTab('chunks')">
+          🧩 Hybrid Chunks
+          <span class="tab-badge" id="tabChunksBadge">0</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: Chat & Corrective RAG Execution -->
+      <div class="tab-pane active" id="paneChat">
+        <div class="card">
+          <div class="card-title">💬 Ask VeritasCRAG</div>
+          <div class="query-box-wrapper">
+            <input type="text" id="queryInput" class="query-input"
+              placeholder="Ask any question about the parsed document..."
+              onkeydown="if(event.key==='Enter') executeQuery()" value="">
+            <button class="send-btn" onclick="executeQuery()">Ask</button>
+          </div>
+
+          <div class="sample-pills" id="samplePills">
+            <!-- Dynamic pills populated via JavaScript -->
+          </div>
+        </div>
+
+        <!-- Spinner -->
+        <div class="card spinner" id="spinner">
+          <div class="spin"></div>
+          <div id="spinnerText">Executing LangGraph State Graph (Retrieve → Grade → Verify)...</div>
+        </div>
+
+        <!-- Result Card -->
+        <div class="card result-card" id="resultCard">
+          <div class="verdict-banner" id="verdictBanner">
+            <div id="verdictText">Action: CORRECT</div>
+            <div id="latencyBadge" style="font-family:var(--font-mono); font-size:0.8rem;">0.21s</div>
+          </div>
+
+          <div>
+            <div
+              style="font-size:0.8rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.5rem;">
+              Verified Grounded Answer:
+            </div>
+            <div class="answer-text" id="answerText"></div>
+          </div>
+
+          <div id="citationsSection">
+            <div
+              style="font-size:0.8rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.5rem;">
+              Supporting Citations & Evidence:
+            </div>
+            <div class="citations-list" id="citationsList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Extracted Document (Docling Markdown & Reading View) -->
+      <div class="tab-pane" id="paneMarkdown">
+        <div class="card">
+          <div class="doc-viewer-header">
+            <div>
+              <div class="card-title" style="margin-bottom:0.25rem;">📄 Extracted Document Intelligence</div>
+              <div style="font-size:0.8rem; color:var(--text-muted);" id="docViewerMeta">
+                Parsed via IBM Docling with layout reconstruction
+              </div>
+            </div>
+            <div class="doc-viewer-actions">
+              <button class="action-chip active" id="viewStructuredBtn" onclick="setDocView('structured')">📋
+                Structured</button>
+              <button class="action-chip" id="viewFormattedBtn" onclick="setDocView('formatted')">📝 Formatted</button>
+              <button class="action-chip" id="viewRawBtn" onclick="setDocView('raw')">📄 Raw Text</button>
+              <button class="action-chip" onclick="copyExtractedMarkdown()">📋 Copy</button>
+            </div>
+          </div>
+
+          <!-- Summary Bar -->
+          <div class="doc-summary-bar" id="docSummaryBar" style="display:none;"></div>
+
+          <!-- Structured Section View (DEFAULT: grouped sections with cards) -->
+          <div class="markdown-body" id="structuredDocBody">
+            <div class="empty-state">
+              <div class="empty-state-icon">📄</div>
+              <div>No document parsed yet. Upload a PDF or file on the left to see structured extracted data here.</div>
+            </div>
+          </div>
+
+          <!-- Rendered Markdown View -->
+          <div class="markdown-body" id="renderedDocBody" style="display:none;"></div>
+
+          <!-- Raw View -->
+          <pre class="markdown-body" id="rawDocBody" style="display:none; font-family:var(--font-mono);"></pre>
+        </div>
+      </div>
+
+      <!-- TAB 3: Extracted Tables -->
+      <div class="tab-pane" id="paneTables">
+        <div class="card">
+          <div class="card-title">📊 Extracted Tables — <span id="tablesCountHeading">0</span> found</div>
+          <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Scroll horizontally on wide
+            tables. Headers stay visible as you scroll down.</div>
+          <div class="tables-container" id="tablesContainer">
+            <div class="empty-state">
+              <div class="empty-state-icon">📊</div>
+              <div>No tables extracted from the active document.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: Chunks Inspector -->
+      <div class="tab-pane" id="paneChunks">
+        <div class="card">
+          <div class="card-title">🧩 Hybrid Chunks Inspector (<span id="chunksCountHeading">0</span>)</div>
+
+          <div class="chunks-toolbar">
+            <input type="text" id="chunkSearchInput" class="chunks-search"
+              placeholder="Filter chunks by heading, text, or keyword..." oninput="filterChunks()">
+          </div>
+
+          <div class="chunks-list" id="chunksList">
+            <div class="empty-state">
+              <div class="empty-state-icon">🧩</div>
+              <div>No chunks indexed yet. Upload a document to view generated chunks.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // State management
+    let currentDocument = null;
+    let rawMarkdownMode = false;
+    let allChunks = [];
+
+    // Tab switching
+    function switchTab(tabName) {
+      const tabs = ['chat', 'markdown', 'tables', 'chunks'];
+      tabs.forEach(t => {
+        const btn = document.getElementById('tabBtn' + capitalize(t));
+        const pane = document.getElementById('pane' + capitalize(t));
+        if (btn) btn.classList.toggle('active', t === tabName);
+        if (pane) pane.classList.toggle('active', t === tabName);
+      });
+    }
+
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    // Drag and drop & File input
+    const fileInput = document.getElementById('pdfInput');
+    const filePill = document.getElementById('filePill');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const dropZone = document.getElementById('dropZone');
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        handleFileSelection(fileInput.files[0]);
+      }
+    });
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = 'var(--primary)';
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+      if (e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        handleFileSelection(e.dataTransfer.files[0]);
+      }
+    });
+
+    function handleFileSelection(file) {
+      filePill.style.display = 'block';
+      filePill.innerText = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      uploadBtn.style.display = 'block';
+      uploadBtn.innerText = `Extract & Ingest "${file.name}"`;
+    }
+
+    // Ingest / Upload
+    async function uploadDocument() {
+      if (!fileInput.files[0]) return;
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      uploadBtn.innerText = 'Parsing with IBM Docling...';
+      uploadBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/v1/ingest', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (res.ok) {
+          // Immediately display on web page!
+          renderDocumentData(data);
+
+          // Show banner and switch to Extracted Document tab
+          const banner = document.getElementById('ingestBanner');
+          const bannerText = document.getElementById('ingestBannerText');
+          bannerText.innerText = `🎉 Extracted "${data.file_name}"! ${data.num_pages} pages, ${data.total_tables} tables, and ${data.total_chunks} chunks ready.`;
+          banner.style.display = 'flex';
+
+          switchTab('markdown');
+        } else {
+          alert('Upload failed: ' + (data.detail || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Upload failed: ' + err.message);
+      } finally {
+        uploadBtn.innerText = 'Ingest & Extract Document';
+        uploadBtn.disabled = false;
+      }
+    }
+
+    // Render document data to all tabs
+    function renderDocumentData(doc) {
+      currentDocument = doc;
+      allChunks = doc.chunks || [];
+
+      // 1. Sidebar Stats
+      document.getElementById('activeDocName').innerText = doc.file_name;
+      document.getElementById('statPages').innerText = doc.num_pages;
+      document.getElementById('statTables').innerText = doc.total_tables;
+      document.getElementById('statChunks').innerText = doc.total_chunks;
+      document.getElementById('statTime').innerText = doc.parsing_duration_seconds ? (doc.parsing_duration_seconds + 's') : '0.3s';
+
+      // Quick sidebar badges
+      document.getElementById('quickTableBadge').innerText = doc.total_tables;
+      document.getElementById('quickChunksBadge').innerText = doc.total_chunks;
+
+      // Tab badges
+      document.getElementById('tabTablesBadge').innerText = doc.total_tables;
+      document.getElementById('tabChunksBadge').innerText = doc.total_chunks;
+      document.getElementById('tablesCountHeading').innerText = doc.total_tables;
+      document.getElementById('chunksCountHeading').innerText = doc.total_chunks;
+
+      // 2. Render Document Summary Bar
+      renderDocSummaryBar(doc);
+
+      // 3. Render Structured View (default)
+      renderStructuredView(doc.markdown || '', doc);
+
+      // 4. Render Formatted Markdown View
+      renderFormattedMarkdownView(doc.markdown || '');
+
+      // 5. Render Raw View
+      document.getElementById('rawDocBody').innerText = doc.markdown || '';
+
+      // 6. Render Tables Tab
+      renderTablesView(doc.tables || []);
+
+      // 7. Render Chunks Tab
+      renderChunksView(allChunks);
+
+      // 8. Update Sample Pills in Chat Studio
+      generateSamplePills(doc);
+    }
+
+    // Document Summary Bar (top stats)
+    function renderDocSummaryBar(doc) {
+      const bar = document.getElementById('docSummaryBar');
+      bar.style.display = 'flex';
+      bar.innerHTML = `
+        <div class="doc-summary-item">
+          <div class="doc-summary-label">Document</div>
+          <div class="doc-summary-value" style="font-size:0.82rem; word-break:break-all;">${escapeHtml(doc.file_name)}</div>
+        </div>
+        <div class="doc-summary-item">
+          <div class="doc-summary-label">Pages</div>
+          <div class="doc-summary-value">${doc.num_pages}</div>
+        </div>
+        <div class="doc-summary-item">
+          <div class="doc-summary-label">Tables Found</div>
+          <div class="doc-summary-value">${doc.total_tables}</div>
+        </div>
+        <div class="doc-summary-item">
+          <div class="doc-summary-label">Chunks</div>
+          <div class="doc-summary-value">${doc.total_chunks}</div>
+        </div>
+        <div class="doc-summary-item">
+          <div class="doc-summary-label">Parse Time</div>
+          <div class="doc-summary-value">${doc.parsing_duration_seconds || 0}s</div>
+        </div>
+      `;
+    }
+
+    // View switching for Extracted Document tab
+    let currentDocView = 'structured';
+    function setDocView(mode) {
+      currentDocView = mode;
+      const structured = document.getElementById('structuredDocBody');
+      const formatted = document.getElementById('renderedDocBody');
+      const raw = document.getElementById('rawDocBody');
+
+      structured.style.display = mode === 'structured' ? 'block' : 'none';
+      formatted.style.display = mode === 'formatted' ? 'block' : 'none';
+      raw.style.display = mode === 'raw' ? 'block' : 'none';
+
+      document.getElementById('viewStructuredBtn').classList.toggle('active', mode === 'structured');
+      document.getElementById('viewFormattedBtn').classList.toggle('active', mode === 'formatted');
+      document.getElementById('viewRawBtn').classList.toggle('active', mode === 'raw');
+    }
+
+    // Structured View: Parse markdown into visual section cards
+    function renderStructuredView(markdown, doc) {
+      const container = document.getElementById('structuredDocBody');
+      if (!markdown || !markdown.trim()) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📄</div><div>No text extracted.</div></div>`;
+        return;
+      }
+
+      const lines = markdown.split('\n');
+      const sections = [];
+      let currentSection = null;
+      let contentLines = [];
+
+      // Section icons based on keywords
+      const sectionIcons = {
+        'summary': '📋', 'education': '🎓', 'experience': '💼', 'project': '🚀',
+        'skill': '⚡', 'certification': '📜', 'achievement': '🏆', 'contact': '📞',
+        'table': '📊', 'form': '📝', 'securities': '📈', 'transaction': '💰',
+        'ownership': '📄', 'signature': '✍️', 'filing': '📋', 'statement': '📝',
+        'name': '👤', 'address': '📍', 'date': '📅', 'reporting': '📊',
+        'derivative': '📈', 'amendment': '📝', 'issuer': '🏢', 'explanation': '💡',
+        'response': '💬', 'note': '📌', 'reminder': '⚠️', 'approval': '✅'
+      };
+
+      function getIcon(title) {
+        const lower = title.toLowerCase();
+        for (const [key, icon] of Object.entries(sectionIcons)) {
+          if (lower.includes(key)) return icon;
+        }
+        return '📑';
+      }
+
+      function flushSection() {
+        if (currentSection) {
+          currentSection.content = contentLines.join('\n').trim();
+          sections.push(currentSection);
+          contentLines = [];
+        }
+      }
+
+      for (const line of lines) {
+        const headingMatch = line.match(/^(#{1,3})\s+(.+)$/);
+        if (headingMatch) {
+          flushSection();
+          currentSection = { title: headingMatch[2].trim(), level: headingMatch[1].length, content: '' };
+          continue;
+        }
+        if (currentSection) {
+          contentLines.push(line);
+        } else {
+          // Content before any heading
+          if (line.trim()) {
+            if (!currentSection) {
+              currentSection = { title: 'Document Header', level: 1, content: '' };
+            }
+            contentLines.push(line);
+          }
+        }
+      }
+      flushSection();
+
+      // If no sections were found (no headings), treat entire text as one section
+      if (sections.length === 0) {
+        sections.push({ title: 'Extracted Content', level: 1, content: markdown });
+      }
+
+      // Render sections as cards
+      let html = '';
+      for (const sec of sections) {
+        if (!sec.title.trim()) continue;
+        // If section has no content (e.g. title-only heading preceding next subsection), skip empty placeholder
+        if (!sec.content.trim()) continue;
+        const icon = getIcon(sec.title);
+        const contentHtml = renderSectionContent(sec.content);
+        html += `
+          <div class="doc-section">
+            <div class="doc-section-title">${icon} ${escapeHtml(sec.title)}</div>
+            <div class="doc-section-content">${contentHtml}</div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html || '<div class="empty-state"><div class="empty-state-icon">📄</div><div>No structured content could be extracted.</div></div>';
+    }
+
+    // Render section content: detect form-like key-value pairs, bullet lists, or plain paragraphs
+    function renderSectionContent(content) {
+      if (!content || !content.trim()) return '<p style="color:var(--text-muted); font-style:italic;">No content in this section.</p>';
+
+      const lines = content.split('\n').filter(l => l.trim());
+
+      // Detect form-like key-value patterns: lines like "Field Name: Value" or "(Label)\nValue"
+      const kvPairs = [];
+      const normalLines = [];
+      let i = 0;
+
+      while (i < lines.length) {
+        const line = lines[i].trim();
+
+        // Pattern: "(Label)" followed by a value on the same or next line
+        const parenMatch = line.match(/^\(([^)]+)\)$/);
+        if (parenMatch && i > 0 && normalLines.length > 0) {
+          const label = parenMatch[1];
+          const value = normalLines.pop();
+          kvPairs.push({ label, value });
+          i++;
+          continue;
+        }
+
+        // Pattern: "Label: Value" or "Number. Label Value"
+        const colonMatch = line.match(/^(\d+\.\s*)?([\w\s/,&()-]+?):\s+(.+)$/);
+        if (colonMatch && colonMatch[3].trim().length > 0) {
+          kvPairs.push({ label: (colonMatch[2] || '').trim(), value: colonMatch[3].trim() });
+          i++;
+          continue;
+        }
+
+        normalLines.push(line);
+        i++;
+      }
+
+      let html = '';
+
+      // If we detected key-value pairs, render them in a nice grid
+      if (kvPairs.length >= 2) {
+        html += '<div class="kv-grid">';
+        for (const kv of kvPairs) {
+          html += `
+            <div class="kv-item">
+              <div class="kv-label">${escapeHtml(kv.label)}</div>
+              <div class="kv-value">${escapeHtml(kv.value)}</div>
+            </div>
+          `;
+        }
+        html += '</div>';
+      }
+
+      // Render remaining lines as paragraphs / bullets
+      if (normalLines.length > 0) {
+        let inList = false;
+        for (const line of normalLines) {
+          if (line.startsWith('- ') || line.startsWith('* ') || line.match(/^\d+\.\s/)) {
+            if (!inList) { html += '<ul>'; inList = true; }
+            const text = line.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '');
+            html += `<li>${escapeHtml(text)}</li>`;
+          } else {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += `<p>${escapeHtml(line)}</p>`;
+          }
+        }
+        if (inList) html += '</ul>';
+      }
+
+      return html;
+    }
+
+    // Formatted Markdown rendering (using marked.js)
+    function renderFormattedMarkdownView(markdown) {
+      const container = document.getElementById('renderedDocBody');
+      if (!markdown || !markdown.trim()) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><div>No text extracted.</div></div>';
+        return;
+      }
+      if (window.marked && typeof window.marked.parse === 'function') {
+        container.innerHTML = window.marked.parse(markdown);
+      } else {
+        container.innerHTML = markdown
+          .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+          .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+          .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+          .replace(/^\- (.*$)/gim, '<li>$1</li>')
+          .replace(/\n\n/gim, '<p></p>')
+          .replace(/\n/gim, '<br>');
+      }
+    }
+
+    function copyExtractedMarkdown() {
+      if (!currentDocument || !currentDocument.markdown) return;
+      navigator.clipboard.writeText(currentDocument.markdown).then(() => {
+        alert('Copied extracted Markdown to clipboard!');
+      });
+    }
+
+    // ====== Tables Renderer (redesigned) ======
+    function renderTablesView(tables) {
+      const container = document.getElementById('tablesContainer');
+      if (!tables || tables.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <div>No standalone tabular structures were detected in this document.</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+      tables.forEach((t, idx) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-wrapper';
+
+        // Header with table name and page badge
+        const tableNum = t.table_index !== undefined ? t.table_index + 1 : idx + 1;
+        const pageBadge = t.page_numbers && t.page_numbers.length ? t.page_numbers.join(', ') : '1';
+        const meta = document.createElement('div');
+        meta.className = 'table-header-meta';
+        meta.innerHTML = `
+          <span class="table-name">📊 Table #${tableNum} — ${t.num_rows || '?'} rows × ${t.num_cols || '?'} columns</span>
+          <span class="table-page">Page ${pageBadge}</span>
+        `;
+        wrapper.appendChild(meta);
+
+        // Scrollable table container
+        const scrollWrap = document.createElement('div');
+        scrollWrap.className = 'table-scroll-wrap';
+
+        if (t.data && Array.isArray(t.data) && t.data.length > 0) {
+          const tableElem = document.createElement('table');
+          tableElem.className = 'data-table';
+
+          const thead = document.createElement('thead');
+          const headerRow = document.createElement('tr');
+          const headers = t.data[0] || [];
+          headers.forEach(cell => {
+            const th = document.createElement('th');
+            th.innerText = (cell !== null && cell !== undefined) ? String(cell) : '';
+            headerRow.appendChild(th);
+          });
+          thead.appendChild(headerRow);
+          tableElem.appendChild(thead);
+
+          const tbody = document.createElement('tbody');
+          for (let r = 1; r < t.data.length; r++) {
+            const rowData = t.data[r] || [];
+            const tr = document.createElement('tr');
+            rowData.forEach(cell => {
+              const td = document.createElement('td');
+              td.innerText = (cell !== null && cell !== undefined) ? String(cell) : '';
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          }
+          tableElem.appendChild(tbody);
+          scrollWrap.appendChild(tableElem);
+        } else if (t.html) {
+          scrollWrap.innerHTML = t.html;
+          const innerTable = scrollWrap.querySelector('table');
+          if (innerTable) {
+            innerTable.className = 'data-table';
+          }
+        } else if (t.markdown) {
+          const mdHtml = window.marked && typeof window.marked.parse === 'function'
+            ? window.marked.parse(t.markdown)
+            : `<pre style="padding:1rem; color:#cbd5e1; font-family:var(--font-mono);">${escapeHtml(t.markdown)}</pre>`;
+          scrollWrap.innerHTML = mdHtml;
+          const innerTable = scrollWrap.querySelector('table');
+          if (innerTable) innerTable.className = 'data-table';
+        }
+
+        wrapper.appendChild(scrollWrap);
+
+        // Scroll hint for wide tables
+        const isWide = (t.num_cols && t.num_cols > 5) || (t.data && t.data[0] && t.data[0].length > 5);
+        if (isWide) {
+          const hint = document.createElement('div');
+          hint.className = 'table-scroll-hint';
+          hint.textContent = '← Scroll horizontally to see all columns →';
+          wrapper.appendChild(hint);
+        }
+
+        container.appendChild(wrapper);
+      });
+    }
+
+    // ====== Chunks Renderer (redesigned) ======
+    function renderChunksView(chunks) {
+      const list = document.getElementById('chunksList');
+      if (!chunks || chunks.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🧩</div>
+            <div>No chunks indexed.</div>
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = '';
+      chunks.forEach((chunk, idx) => {
+        const card = document.createElement('div');
+        card.className = 'chunk-card';
+
+        const breadcrumbText = chunk.headings && chunk.headings.length
+          ? chunk.headings.join(' › ')
+          : 'Section ' + (idx + 1);
+
+        const chunkType = chunk.chunk_type || 'text';
+        const tagClass = chunkType === 'table' ? 'chunk-tag-table' : 'chunk-tag-text';
+        const pageStr = chunk.page_numbers ? chunk.page_numbers.join(', ') : '1';
+
+        card.innerHTML = `
+          <div class="chunk-top">
+            <div class="chunk-meta">
+              <span class="chunk-tag ${tagClass}">${chunkType}</span>
+              <span>Chunk #${idx + 1}</span>
+              <span>•</span>
+              <span>${chunk.token_count || '~'} tokens</span>
+              <span>•</span>
+              <span>Page ${pageStr}</span>
+            </div>
+          </div>
+          <div class="chunk-breadcrumb">📁 ${escapeHtml(breadcrumbText)}</div>
+          <div class="chunk-content">${escapeHtml(chunk.text)}</div>
+          <div class="chunk-actions">
+            <button class="chunk-ask-btn" onclick="askAboutChunk('${escapeForJs(breadcrumbText)}', '${escapeForJs(chunk.text.slice(0, 80))}')">
+              💬 Ask About This
+            </button>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function filterChunks() {
+      const q = document.getElementById('chunkSearchInput').value.toLowerCase().trim();
+      if (!q) {
+        renderChunksView(allChunks);
+        return;
+      }
+      const filtered = allChunks.filter(c => {
+        const textMatch = c.text && c.text.toLowerCase().includes(q);
+        const headingMatch = c.headings && c.headings.some(h => h.toLowerCase().includes(q));
+        return textMatch || headingMatch;
+      });
+      renderChunksView(filtered);
+    }
+
+    function askAboutChunk(heading, snippet) {
+      switchTab('chat');
+      const cleanHeading = heading.replace(/[^\w\s-]/gi, '').trim();
+      const question = cleanHeading
+        ? `Tell me about ${cleanHeading}`
+        : `What are the key points in: ${snippet.slice(0, 40)}?`;
+      document.getElementById('queryInput').value = question;
+      executeQuery();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function escapeForJs(str) {
+      if (!str) return '';
+      return str.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, ' ');
+    }
+
+    // Dynamic Sample Pills
+    function generateSamplePills(doc) {
+      const pillsContainer = document.getElementById('samplePills');
+      pillsContainer.innerHTML = '';
+
+      const pills = [];
+      if (doc.chunks && doc.chunks.length > 0) {
+        const headings = new Set();
+        doc.chunks.forEach(c => {
+          if (c.headings && c.headings.length) {
+            headings.add(c.headings[c.headings.length - 1]);
+          }
+        });
+
+        const headingArr = Array.from(headings).slice(0, 5);
+        headingArr.forEach(h => {
+          pills.push(`What does the document say about "${h}"?`);
+        });
+      }
+
+      if (pills.length === 0) {
+        pills.push("Summarize this document");
+        pills.push("What are the key findings?");
+        pills.push("List the main data points");
+      }
+
+      pills.forEach(q => {
+        const pill = document.createElement('div');
+        pill.className = 'sample-pill';
+        pill.innerText = '💡 ' + q;
+        pill.onclick = () => {
+          document.getElementById('queryInput').value = q;
+          executeQuery();
+        };
+        pillsContainer.appendChild(pill);
+      });
+
+      if (!document.getElementById('queryInput').value && pills.length > 0) {
+        document.getElementById('queryInput').value = pills[0];
+      }
+    }
+
+    // Query Execution
+    async function executeQuery() {
+      const q = document.getElementById('queryInput').value.trim();
+      if (!q) return;
+
+      const spinner = document.getElementById('spinner');
+      const resultCard = document.getElementById('resultCard');
+
+      resultCard.style.display = 'none';
+      spinner.style.display = 'flex';
+
+      try {
+        const res = await fetch('/api/v1/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: q, top_k: 5 })
+        });
+        const data = await res.json();
+
+        spinner.style.display = 'none';
+        resultCard.style.display = 'flex';
+
+        const banner = document.getElementById('verdictBanner');
+        banner.className = 'verdict-banner';
+        if (data.action === 'CORRECT') {
+          banner.classList.add('verdict-correct');
+          banner.innerHTML = `<div>✓ CORRECT — Internal Document Match (${(data.confidence * 100).toFixed(0)}% confidence)</div><div>⚡ ${data.latency_seconds.toFixed(3)}s</div>`;
+        } else if (data.action === 'AMBIGUOUS') {
+          banner.classList.add('verdict-ambiguous');
+          banner.innerHTML = `<div>⚠ AMBIGUOUS — Merged Internal + Web Sources</div><div>⚡ ${data.latency_seconds.toFixed(3)}s</div>`;
+        } else {
+          banner.classList.add('verdict-incorrect');
+          banner.innerHTML = `<div>🌐 WEB FALLBACK — Fetched Live Web Data</div><div>⚡ ${data.latency_seconds.toFixed(3)}s</div>`;
+        }
+
+        document.getElementById('answerText').innerText = data.answer;
+
+        const citList = document.getElementById('citationsList');
+        citList.innerHTML = '';
+        if (data.citations && data.citations.length > 0) {
+          document.getElementById('citationsSection').style.display = 'block';
+          data.citations.forEach(c => {
+            const item = document.createElement('div');
+            item.className = 'citation-item';
+            item.innerHTML = `
+              <div class="citation-header">[${c.index}] ${c.source_type.toUpperCase()} • ${escapeHtml(c.provenance)}</div>
+              <div class="citation-snippet">${escapeHtml(c.snippet)}</div>
+            `;
+            citList.appendChild(item);
+          });
+        } else {
+          document.getElementById('citationsSection').style.display = 'none';
+        }
+
+      } catch (err) {
+        spinner.style.display = 'none';
+        alert('Query error: ' + err.message);
+      }
+    }
+
+    // Auto-fetch latest parsed document on page load
+    async function initPage() {
+      try {
+        const res = await fetch('/api/v1/document/latest');
+        if (res.ok) {
+          const doc = await res.json();
+          renderDocumentData(doc);
+        } else {
+          document.getElementById('activeDocName').innerText = "None (Upload a PDF to start)";
+        }
+      } catch (e) {
+        console.log('No previous document loaded:', e);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initPage);
+  </script>
+</body>
+
+</html>
